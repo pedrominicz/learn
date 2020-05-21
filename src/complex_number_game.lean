@@ -521,7 +521,13 @@ lemma norm_sq_nonneg (z : ℂ) : 0 ≤ norm_sq z :=
 add_nonneg (mul_self_nonneg _) (mul_self_nonneg _)
 
 @[simp] lemma norm_sq_eq_zero {z : ℂ} : norm_sq z = 0 ↔ z = 0 :=
-sorry
+begin
+  split; intro H,
+  { ext; apply eq_zero_of_mul_self_add_mul_self_eq_zero,
+    { assumption },
+    { rwa add_comm } },
+  { simp [H] }
+end
 
 @[simp] lemma norm_sq_pos {z : ℂ} : 0 < norm_sq z ↔ z ≠ 0 :=
 sorry
