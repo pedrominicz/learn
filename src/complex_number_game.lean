@@ -477,9 +477,9 @@ begin
     ext; simp at *, linarith },
   { cases H with r H,
     have := congr_arg re H,
-    ext,
-    { simp },
-    { rw [congr_arg im H, of_real_im r], simp } }
+    ext; simp,
+    rw [congr_arg im H, of_real_im r],
+    simp }
 end
 
 lemma eq_conj_iff_re {z : ℂ} : conj z = z ↔ (z.re : ℂ) = z :=
@@ -529,32 +529,36 @@ begin
   { simp [H] }
 end
 
+-- I copied this proof from the [solutions](https://github.com/kbuzzard/xena/blob/master/Mathematics_In_Lean_ideas/complex_solns.lean).
+-- Note how `rw` is only necessary because `simp` doesn't automatically try symmetries.
 @[simp] lemma norm_sq_pos {z : ℂ} : 0 < norm_sq z ↔ z ≠ 0 :=
-sorry
+by rw [lt_iff_le_and_ne, ne, eq_comm]; simp [norm_sq_nonneg]
 
 @[simp] lemma norm_sq_neg (z : ℂ) : norm_sq (-z) = norm_sq z :=
-sorry
+by simp [norm_sq]
 
 @[simp] lemma norm_sq_conj (z : ℂ) : norm_sq (conj z) = norm_sq z :=
-sorry
+by simp [norm_sq]
 
 @[simp] lemma norm_sq_mul (z w : ℂ) : norm_sq (z * w) = norm_sq z * norm_sq w :=
-sorry
+by simp [norm_sq]; ring
 
 lemma norm_sq_add (z w : ℂ) : norm_sq (z + w) =
   norm_sq z + norm_sq w + 2 * (z * conj w).re :=
-sorry
+by simp [norm_sq]; ring
 
 lemma re_sq_le_norm_sq (z : ℂ) : z.re * z.re ≤ norm_sq z :=
-sorry
+le_add_of_nonneg_right (mul_self_nonneg _)
 
 lemma im_sq_le_norm_sq (z : ℂ) : z.im * z.im ≤ norm_sq z :=
-sorry
+le_add_of_nonneg_left (mul_self_nonneg _)
 
 theorem mul_conj (z : ℂ) : z * conj z = norm_sq z :=
-sorry
-
-end complex
+begin
+  rw ext_iff,
+  simp [norm_sq],
+  ring
+end
 
 /-! # Exercise 4 (advanced) 
 
@@ -565,8 +569,40 @@ end complex
 
 -/
 
-instance : field ℂ := sorry
+noncomputable instance : has_inv ℂ := ⟨λ z, conj z * ((norm_sq z)⁻¹ : ℝ)⟩
+
+lemma inv_def (z : ℂ) : z⁻¹ = conj z * ((norm_sq z)⁻¹ : ℝ) := rfl
+
+@[simp] lemma inv_re (z : ℂ) : (z⁻¹).re = z.re / norm_sq z := by simp [inv_def, division_def]
+@[simp] lemma inv_im (z : ℂ) : (z⁻¹).im = -z.im / norm_sq z := by simp [inv_def, division_def]
+
+@[simp, norm_cast] lemma of_real_inv (r : ℝ) : ((r⁻¹ : ℝ) : ℂ) = r⁻¹ :=
+begin
+  rw ext_iff,
+  by_cases r = 0; simp [h],
+  rw [←div_div_eq_div_mul, div_self h, one_div_eq_inv],
+end
+
+instance : zero_ne_one_class ℂ :=
+{ zero := has_zero.zero,
+  one := has_one.one,
+  zero_ne_one := mt (congr_arg re) zero_ne_one }
+
+protected lemma mul_inv_cancel {z : ℂ} (h : z ≠ 0) : z * z⁻¹ = 1 :=
+by rw [inv_def, ← mul_assoc, mul_conj, ← of_real_mul, mul_inv_cancel (mt norm_sq_eq_zero.1 h), of_real_one]
+
+protected lemma inv_zero : (0 : ℂ)⁻¹ = 0 :=
+by rw [←of_real_zero, ←of_real_inv, inv_zero]
+
+noncomputable instance : field ℂ :=
+{ mul_inv_cancel := @complex.mul_inv_cancel,
+  inv_zero := complex.inv_zero,
+  ..complex.comm_ring,
+  ..complex.has_inv,
+  ..complex.zero_ne_one_class }
 
 -- As for it being algebraically closed, [here](https://github.com/leanprover-community/mathlib/blob/3710744/src/analysis/complex/polynomial.lean#L34)
--- is where it is proved in mathlib. The mathlib proof was written by Chris Hughes, a mathematics
--- undergraduate at Imperial College London.
+
+-- Writing a topological proof here would be awesome. But way out of my depth as of right now.
+
+end complex
