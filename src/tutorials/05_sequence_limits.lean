@@ -251,9 +251,19 @@ def is_seq_sup (M : ℝ) (u : ℕ → ℝ) :=
 
 -- 0038
 example (M : ℝ) (h : is_seq_sup M u) (h' : non_decreasing u) :
-seq_limit u M :=
+  seq_limit u M :=
 begin
   intros ε ε_pos,
-  sorry
+  cases h with hM hu,
+  cases hu ε ε_pos with N hN,
+  use N,
+  intros n hn,
+  apply abs_le_of_le_of_neg_le,
+  { apply sub_le_of_sub_le,  
+    rw sub_le_iff_le_add,
+    specialize hM n,
+    linarith },
+  { specialize h' N n hn,
+    linarith }
 end
 

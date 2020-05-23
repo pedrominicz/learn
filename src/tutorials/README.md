@@ -7,7 +7,7 @@ See [`LICENSE`](LICENSE).
 - [x] [`iff_if_and`](02_iff_if_and.lean)
 - [x] [`forall_or`](03_forall_or.lean)
 - [x] [`exists`](04_exists.lean)
-- [ ] [`sequence_limits`](05_sequence_limits.lean)
+- [x] [`sequence_limits`](05_sequence_limits.lean)
 - [ ] [`sub_sequences`](06_sub_sequences.lean)
 - [ ] [`first_negations`](07_first_negations.lean)
 - [ ] [`abstract_negations`](07bis_abstract_negations.lean)
