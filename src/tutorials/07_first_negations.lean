@@ -34,6 +34,9 @@ use the definition of `¬ P`.
 -/
 
 example {x : ℝ} : ¬ x < x :=
+by { rw lt_iff_le_and_ne, cc }
+
+example {x : ℝ} : ¬ x < x :=
 begin
   intro hyp,
   rw lt_iff_le_and_ne at hyp,
@@ -47,15 +50,26 @@ end
 open int
 
 -- 0045
-example (n : ℤ) (h_pair : even n) (h_non_pair : ¬ even n) : 0 = 1 :=
-begin
-  sorry
-end
+example (n : ℤ) (h_pair : even n) (h_non_pair : ¬ even n) : 0 = 1 := by cc
 
 -- 0046
 example (P Q : Prop) (h₁ : P ∨ Q) (h₂ : ¬ (P ∧ Q)) : ¬ P ↔ Q :=
 begin
-  sorry
+  split,
+  { intro h₃,
+    cases h₁ with p q,
+    { exfalso,
+      apply h₃,
+      assumption },
+    { assumption } },
+  { intro h₃,
+    cases h₁ with p q,
+    { exfalso,
+      apply h₂,
+      split; assumption },
+    { intro q,
+      apply h₂,
+      split; assumption } }
 end
 
 /-
@@ -83,6 +97,29 @@ eq_of_abs_sub_le_all (x y : ℝ) : (∀ ε > 0, |x - y| ≤ ε) → x = y
 
 (we'll prove a variation on this lemma below).
 -/
+example (u : ℕ → ℝ) (l l' : ℝ) : seq_limit u l → seq_limit u l' → l = l' :=
+begin
+  intros hl hl',
+  by_contra h,
+  change l ≠ l' at h,
+  have h₁ : |l - l'| > 0,
+  { apply abs_pos_of_ne_zero,
+    apply sub_ne_zero_of_ne,
+    assumption },
+  set ε := |l - l'| / 4 with hε,
+  cases hl ε (by linarith) with N hN,
+  cases hl' ε (by linarith) with N' hN',
+  let N := max N N',  
+  specialize hN N le_sup_left,
+  specialize hN' N le_sup_right,
+  have h₂ : |l - l'| < |l - l'|,
+  calc |l - l'| = |(l - u N) + (u N - l')| : by ring
+  ...           ≤ |l - u N| + |u N - l'|   : by apply abs_add
+  ...           ≤ |u N - l| + |u N - l'|   : by rw abs_sub
+  ...           < |l - l'|                 : by linarith,
+  linarith
+end
+
 example (u : ℕ → ℝ) (l l' : ℝ) : seq_limit u l → seq_limit u l' → l = l' :=
 begin
   intros hl hl',
@@ -114,7 +151,9 @@ non Q ⇒ non P.
 -- 0047
 example (P Q : Prop) (h : ¬ Q → ¬ P) : P → Q :=
 begin
-  sorry
+  intro p,
+  by_contra hq,
+  apply h; assumption
 end
 
 /-
@@ -136,7 +175,18 @@ In the next exercise, we'll use
 -- 0048
 example (n : ℤ) : even (n^2) ↔ even n :=
 begin
-  sorry
+  rw pow_two,
+  split,
+  { contrapose,
+    repeat { rw not_even_iff_odd },
+    rintros ⟨k, rfl⟩,
+    set a := 2 * k with ha,
+    use k * (a + 2),
+    rw ha,
+    ring },
+  { rintros ⟨k, rfl⟩,
+    use 2 * k * k,
+    ring }
 end
 /-
 As a last step on our law of the excluded middle tour, let's notice that, especially
@@ -161,6 +211,18 @@ variables (P Q : Prop)
 
 example : (P → Q) ↔ (¬ P ∨ Q) :=
 begin
+  split; intros h,
+  { by_cases hq : Q,
+    { right, assumption },
+    { left, exact λ p, hq (h p) } },
+  { intro p,
+    cases h with hp q,
+    { exfalso, apply hp, assumption },
+    { assumption } }
+end
+
+example : (P → Q) ↔ (¬ P ∨ Q) :=
+begin
   split,
   { intro h,
     by_cases hP : P,
@@ -178,7 +240,16 @@ end
 -- 0049
 example : ¬ (P ∧ Q) ↔ ¬ P ∨ ¬ Q :=
 begin
-  sorry
+  split,
+  { intro h,
+    by_cases hp : P,
+    { right,
+      intro q,
+      apply h,
+      split; assumption },
+    { left; assumption } },
+  { rintros h ⟨p, q⟩,
+    cases h; cc }
 end
 
 /-
@@ -190,7 +261,11 @@ In the first exercise, only the definition of negation is needed.
 -- 0050
 example (n : ℤ) : ¬ (∃ k, n = 2*k) ↔ ∀ k, n ≠ 2*k :=
 begin
-  sorry
+  split; intro h,
+  { intros k hk,
+    exact h ⟨k, hk⟩ },
+  { rintro ⟨k, hk⟩,
+    exact h k hk }
 end
 
 /-
@@ -206,7 +281,38 @@ def even_fun (f : ℝ → ℝ) := ∀ x, f (-x) = f x
 -- 0051
 example (f : ℝ → ℝ) : ¬ even_fun f ↔ ∃ x, f (-x) ≠ f x :=
 begin
-  sorry
+  split,
+  { intro h₁,
+    by_contra h₂,
+    apply h₁,
+    intro x,
+    by_contra h₃,
+    apply h₂,
+    use x; assumption },
+  { rintros ⟨x, hx⟩ hf,
+    apply hx,
+    apply hf }
+end
+
+example (f : ℝ → ℝ) : ¬ even_fun f ↔ ∃ x, f (-x) ≠ f x :=
+begin
+  split,
+  { contrapose,
+    intro h,
+    rw not_not,
+    intro x,
+    by_contra,
+    apply h,
+    use x; assumption },
+  { contrapose,
+    rw not_not,
+    intro h,
+    -- It sucks that the anonymous contructor syntax isn't "builtin enough" in
+    -- Lean, so I can't write `by_contra ⟨x, hx⟩`.
+    by_contra this,
+    cases this with x hx,
+    apply hx,
+    apply h }
 end
 
 /-
@@ -225,7 +331,8 @@ end
 -- 0052
 example (f : ℝ → ℝ) : ¬ even_fun f ↔ ∃ x, f (-x) ≠ f x :=
 begin
-  sorry
+  unfold even_fun,
+  push_neg
 end
 
 def bounded_above (f : ℝ → ℝ) := ∃ M, ∀ x, f x ≤ M
@@ -243,7 +350,11 @@ end
 -- 0053
 example (x : ℝ) : (∀ ε > 0, x ≤ ε) → x ≤ 0 :=
 begin
-  sorry
+  contrapose,
+  push_neg,
+  intro h,
+  use x/2,
+  split; linarith
 end
 
 /-
@@ -257,6 +368,18 @@ Let's use this trick, together with:
 -- 0054
 example (f : ℝ → ℝ) : (∀ x y, x < y → f x < f y) ↔ (∀ x y, (x ≤ y ↔ f x ≤ f y)) :=
 begin
-  sorry
+  split,
+  { intros hf x y,
+    split,
+    { intro h,
+      cases eq_or_lt_of_le h with h h,
+      { rw h },
+      { linarith [hf x y h] } },
+    { contrapose!,
+      apply hf } },
+  { intros hf x y,
+    contrapose!,
+    intro h,
+    rwa hf }
 end
 
