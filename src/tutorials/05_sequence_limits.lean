@@ -145,7 +145,7 @@ begin
     from hN₂ n (by linarith), 
   calc
   |(u + v) n - (l + l')| = |u n + v n - (l + l')|   : rfl
-                     ... = |(u n - l) + (v n - l')| : by congr' 1 ; ring
+                     ... = |(u n - l) + (v n - l')| : by congr' 1; ring
                      ... ≤ |u n - l| + |v n - l'|   : by apply abs_add
                      ... ≤  ε                       : by linarith,
 end
